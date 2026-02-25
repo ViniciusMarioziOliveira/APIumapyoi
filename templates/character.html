@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ character['name_en'] }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<a class="back-btn" href="/">⬅ Voltar</a>
+
+<div class="detail-container">
+
+    <div class="detail-left">
+        <img src="{{ character['thumb_img'] }}" alt="{{ character['name_en'] }}">
+    </div>
+
+    <div class="detail-right">
+        <h1>{{ character['name_en'] }}</h1>
+        <h3 class="jp-name">{{ character['name_jp'] }}</h3>
+
+        <div class="info-grid">
+            <div><strong>Altura:</strong> {{ character.get('height', 'N/A') }} cm</div>
+            <div>
+                <strong>Aniversário:</strong>
+                {% if character.birth_day and character.birth_month %}
+                {{ character.birth_day }}/{{ character.birth_month }}
+                {% else %}
+                N/A
+                {% endif %}
+                </div>
+            <div><strong>Categoria:</strong> {{ character.get('category_label_en', 'N/A') }}</div>
+            <div><strong>Cor Principal:</strong> 
+                <span class="color-box" style="background: {{ character.get('color_main', '#ccc') }}"></span>
+            </div>
+        </div>
+
+        {% if character.profile %}
+            <div class="section">
+                <h2>Descrição</h2>
+                <p>{{ character.profile }}</p>
+            </div>
+        {% endif %}
+
+        {% if character.voice %}
+        <div class="section">
+            <h2>Voz</h2>
+            <audio controls>
+                <source src="{{ character.voice }}" type="audio/mpeg">
+                Seu navegador não suporta áudio.
+            </audio>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

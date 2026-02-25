@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UmaMusume API</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>🐎 UmaMusume Characters</h1>
+</header>
+
+<div class="grid">
+    {% for char in characters %}
+    <div class="card">
+        <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
+        <div class="card-content">
+            <h2>{{ char['name_en'] }}</h2>
+            <span class="jp-name">{{ char['name_jp'] }}</span>
+            <a class="btn" href="/character/{{ char['id'] }}">Ver detalhes</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>
