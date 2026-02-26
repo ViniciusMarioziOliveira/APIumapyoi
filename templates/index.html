@@ -14,23 +14,77 @@
 <body>
 
 <header class="main-header">
-    <h1 class="logo">UmaIndex!</h1>
+    <h1 class="logo"><span style="color: #ff1a8c;">Uma</span>Index!</h1>
     <div class="header-actions">
         <input type="text" id="searchInput" autocomplete="off"  placeholder="Buscar personagem...">
     </div>
 </header>
 
-<div class="grid">
-    {% for char in characters %}
-    <div class="card">
-        <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
-        <div class="card-content">
-            <h2>{{ char['name_en'] }}</h2>
-            <span class="jp-name">{{ char['name_jp'] }}</span>
-            <a class="btn" href="/character/{{ char['id'] }}">Ver detalhes</a>
+<div class="index-layout">
+
+    <div class="cards-area">
+        <div class="grid">
+            {% for char in characters %}
+            <div class="card">
+                <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
+                <div class="card-content">
+                    <h2>{{ char['name_en'] }}</h2>
+                    <span class="jp-name">{{ char['name_jp'] }}</span>
+                    <a class="btn" href="/character/{{ char['id'] }}">Ver detalhes</a>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    {% endfor %}
+
+    <aside class="sidebar">
+
+
+<h2> Personagem <span style="color: #ff1a8c;">Aleatório!</span> </h2>
+
+<div class="random-mini-card">
+    <img src="{{ random_character['thumb_img'] }}" 
+         alt="{{ random_character['name_en'] }}">
+
+    <div class="random-mini-content">
+        <h3>{{ random_character['name_en'] }}</h3>
+        <span class="jp-name">
+            {{ random_character['name_jp'] }}
+        </span>
+
+        <a class="mini-btn"
+           href="/character/{{ random_character['id'] }}">
+           Ver
+        </a>
+    </div>
+</div>
+
+
+<h2>Aniversariantes do mês</h2>
+
+<div class="birthday-scroll">
+    <table class="birthday-table">
+        <tr>
+            <th>Nome</th>
+            <th>Data</th>
+        </tr>
+
+        {% if birthdays %}
+            {% for b in birthdays|sort(attribute="day") %}
+            <tr>
+                <td>{{ b.name }}</td>
+                <td>{{ b.day }}/{{ b.month }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="2">Nenhum aniversário este mês</td>
+            </tr>
+        {% endif %}
+    </table>
+</div>
+    </aside>
+
 </div>
 
 
