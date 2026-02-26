@@ -1,13 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>UmaMusume API</title>
+    <title>UmaIndex!</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="/static/img/icon.png">
+    <style>
+        @font-face {
+            font-family: title1;
+            src: url(/static/img/Daily\ Vibes.otf);
+        }
+    </style>
 </head>
 <body>
 
-<header>
-    <h1>🐎 UmaMusume Characters</h1>
+<header class="main-header">
+    <h1 class="logo">UmaIndex!</h1>
+    <div class="header-actions">
+        <input type="text" id="searchInput" autocomplete="off"  placeholder="Buscar personagem...">
+    </div>
 </header>
 
 <div class="grid">
@@ -23,5 +33,24 @@
     {% endfor %}
 </div>
 
+
+<script>
+const searchInput = document.getElementById("searchInput");
+const cards = document.querySelectorAll(".card");
+
+searchInput.addEventListener("keyup", function () {
+    const value = this.value.toLowerCase();
+
+    cards.forEach(card => {
+        const name = card.querySelector("h2").textContent.toLowerCase();
+
+        if (name.includes(value)) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    });
+});
+</script>
 </body>
 </html>

@@ -3,6 +3,7 @@
 <head>
     <title>{{ character['name_en'] }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="/static/img/icon.png">
 </head>
 <body>
 
@@ -11,49 +12,99 @@
 <div class="detail-container">
 
     <div class="detail-left">
+
+    {% if image_groups and image_groups|length > 0 %}
+
+        <!-- Primeira imagem da primeira categoria -->
+        <img id="character-img"
+             src="{{ image_groups[0]['images'][0]['image'] }}"
+             alt="{{ character['name_en'] }}">
+
+        <div class="outfit-buttons">
+    {% for group in image_groups %}
+        <button class="outfit-btn"
+                onclick="changeImage(this, '{{ group['images'][0]['image'] }}')">
+            {{ group.get('label_en', 'Outfit') }}
+        </button>
+    {% endfor %}
+</div>
+
+    {% else %}
         <img src="{{ character['thumb_img'] }}" alt="{{ character['name_en'] }}">
-    </div>
+    {% endif %}
+
+</div>
 
     <div class="detail-right">
+
+    <div class="title-block">
         <h1>{{ character['name_en'] }}</h1>
         <h3 class="jp-name">{{ character['name_jp'] }}</h3>
+    </div>
 
-        <div class="info-grid">
-            <div><strong>Altura:</strong> {{ character.get('height', 'N/A') }} cm</div>
-            <div>
-                <strong>Aniversário:</strong>
+    <div class="info-grid">
+        <div class="info-card">
+            <span>Altura</span>
+            <strong>{{ character.get('height', 'N/A') }} cm</strong>
+        </div>
+
+        <div class="info-card">
+            <span>Aniversário</span>
+            <strong>
                 {% if character.birth_day and character.birth_month %}
                 {{ character.birth_day }}/{{ character.birth_month }}
                 {% else %}
                 N/A
                 {% endif %}
-                </div>
-            <div><strong>Categoria:</strong> {{ character.get('category_label_en', 'N/A') }}</div>
-            <div><strong>Cor Principal:</strong> 
+            </strong>
+        </div>
+
+        <div class="info-card">
+            <span>Categoria</span>
+            <strong>{{ character.get('category_label_en', 'N/A') }}</strong>
+        </div>
+
+        <div class="info-card color-card">
+            <span>Cor Principal</span>
+            <div class="color-preview">
                 <span class="color-box" style="background: {{ character.get('color_main', '#ccc') }}"></span>
+                {{ character.get('color_main', '#ccc') }}
             </div>
         </div>
-
-        {% if character.profile %}
-            <div class="section">
-                <h2>Descrição</h2>
-                <p>{{ character.profile }}</p>
-            </div>
-        {% endif %}
-
-        {% if character.voice %}
-        <div class="section">
-            <h2>Voz</h2>
-            <audio controls>
-                <source src="{{ character.voice }}" type="audio/mpeg">
-                Seu navegador não suporta áudio.
-            </audio>
-        </div>
-        {% endif %}
-
     </div>
+
+    {% if character.profile %}
+    <div class="section description-box">
+        <h2>Descrição</h2>
+        <p>{{ character.profile }}</p>
+    </div>
+    {% endif %}
+
+    {% if character.voice %}
+    <div class="section voice-box">
+        <h2>Voz</h2>
+        <audio controls>
+            <source src="{{ character.voice }}" type="audio/mpeg">
+        </audio>
+    </div>
+    {% endif %}
 
 </div>
 
+</div>
+
+<script>
+function changeImage(button, src) {
+    document.getElementById("character-img").src = src;
+
+    // Remove classe ativa de todos
+    document.querySelectorAll(".outfit-btn").forEach(btn => {
+        btn.classList.remove("active");
+    });
+
+    // Adiciona no clicado
+    button.classList.add("active");
+}
+</script>
 </body>
 </html>
