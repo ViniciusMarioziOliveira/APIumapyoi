@@ -3,7 +3,13 @@
 <head>
     <title>{{ character['name_en'] }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" href="/static/img/icon.png">
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <style>
+        @font-face {
+            font-family: title1;
+            src: url(/static/img/DailyVibes.otf);
+        }
+    </style>
 </head>
 <body>
 
