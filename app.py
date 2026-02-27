@@ -2,49 +2,15 @@ from flask import Flask, render_template
 import requests
 from datetime import datetime
 import random
+import json
 
 app = Flask(__name__)
 
 API_BASE = "https://api.umapyoi.net/api/v1"
 
-# 🔥 Cache global
-birthday_cache = []
-
-
-def load_birthdays():
-    """
-    Carrega todos os aniversários da API uma única vez
-    e salva em memória.
-    """
-    global birthday_cache
-
-    print("Carregando aniversários...")
-
-    response = requests.get(f"{API_BASE}/character/list")
-    if response.status_code != 200:
-        print("Erro ao buscar lista de personagens")
-        return
-
-    characters = response.json()
-
-    for char in characters:
-        char_id = char["id"]
-
-        detail_response = requests.get(f"{API_BASE}/character/{char_id}")
-        if detail_response.status_code == 200:
-            detail = detail_response.json()
-
-            # Só adiciona se tiver data válida
-            if detail.get("birth_day") and detail.get("birth_month"):
-                birthday_cache.append({
-                    "name": detail.get("name_en"),
-                    "day": detail.get("birth_day"),
-                    "month": detail.get("birth_month")
-                })
-
-
-# 🔥 Executa UMA VEZ quando o servidor inicia
-load_birthdays()
+# 🔥 Carrega aniversários do arquivo JSON (cache local)
+with open("birthdays.json", "r", encoding="utf-8") as f:
+    birthday_cache = json.load(f)
 
 
 @app.route("/")
@@ -101,6 +67,7 @@ def character_detail(char_id):
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
