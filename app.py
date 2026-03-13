@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import requests
 from datetime import datetime
 import random
@@ -116,13 +116,24 @@ def next_question():
     if not characters:
         return jsonify({"error": "Characters not loaded"}), 500
 
-    correct = random.choice(characters)
+    used_ids = request.args.getlist("used[]", type=int)
 
-    options = random.sample(characters, 4)
+    # personagens ainda não usados
+    available = [c for c in characters if c["id"] not in used_ids]
 
-    if correct not in options:
-        options[0] = correct
+    # se acabaram os personagens, resetar lista
+    if len(available) < 4:
+        available = characters.copy()
+        used_ids = []
 
+    correct = random.choice(available)
+
+    wrong = random.sample(
+        [c for c in available if c["id"] != correct["id"]],
+        3
+    )
+
+    options = wrong + [correct]
     random.shuffle(options)
 
     return jsonify({

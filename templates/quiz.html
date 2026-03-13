@@ -51,7 +51,7 @@ o máximo de UmaMusumes!
 </div>
 
 <h2 class="quiz-question">
-Quem é essa UmaMusume?
+Quem é essa personagem?
 </h2>
 
 <div class="quiz-options" id="optionsContainer">
@@ -107,6 +107,8 @@ let gameStarted = localStorage.getItem("quizStarted") === "true"
 
 let currentCorrect = "{{ correct['id'] }}"
 
+let usedCharacters = []
+
 let timer
 
 /* ================= SCORE / TIMER ================= */
@@ -138,13 +140,22 @@ startTimer()
 
 function startGame(){
 
+score = 0
+streak = 0
+timeLeft = 60
+answered = false
+usedCharacters = []
+
+updateUI()
+
 localStorage.setItem("quizStarted","true")
 
 document.getElementById("startMenu").style.display="none"
 document.getElementById("quizGame").style.display="flex"
 
-startTimer()
+enableButtons()  
 
+startTimer()
 }
 
 /* ================= TIMER ================= */
@@ -174,21 +185,34 @@ gameOver()
 
 function gameOver(){
 
+clearInterval(timer)
+
 disableButtons()
 
-let playerName=prompt("Tempo acabou! Pontuação: "+score+"\nDigite seu nome:")
+let playerName = prompt("Tempo acabou! Pontuação: " + score + "\nDigite seu nome:")
 
 if(playerName){
-
-saveScore(playerName,score)
-
+    saveScore(playerName, score)
 }
 
-document.getElementById("result").innerHTML="Fim de jogo!"
-document.getElementById("result").style.color="#ffd166"
+/* Resetar variáveis em memória */
+score = 0
+streak = 0
+timeLeft = 60
+answered = false
+usedCharacters = []
 
+/* Atualizar UI */
+updateUI()
+
+/* Voltar para menu */
+document.getElementById("quizGame").style.display = "none"
+document.getElementById("startMenu").style.display = "flex"
+
+document.getElementById("result").innerHTML = ""
+
+/* Limpar localStorage */
 resetGame()
-
 }
 
 /* ================= UI ================= */
@@ -251,41 +275,40 @@ async function loadNextQuestion(){
 
 answered=false
 
-const response=await fetch("/quiz/next")
-const data=await response.json()
+const params = new URLSearchParams()
 
-currentCorrect=data.correct_id
+usedCharacters.forEach(id => {
+    params.append("used[]", id)
+})
+
+const response = await fetch("/quiz/next?" + params.toString())
+const data = await response.json()
+
+currentCorrect = data.correct_id
+
+// adicionar à lista de usados
+usedCharacters.push(currentCorrect)
 
 /* trocar imagem */
-
 document.getElementById("quizImage").src=data.image
 
-/* preload imagem */
-
+/* preload */
 const img=new Image()
 img.src=data.image
 
 /* atualizar opções */
-
 const container=document.getElementById("optionsContainer")
-
 container.innerHTML=""
 
 data.options.forEach(opt=>{
-
-const btn=document.createElement("button")
-
-btn.className="quiz-btn"
-btn.innerText=opt.name
-
-btn.onclick=()=>checkAnswer(opt.id,currentCorrect)
-
-container.appendChild(btn)
-
+    const btn=document.createElement("button")
+    btn.className="quiz-btn"
+    btn.innerText=opt.name
+    btn.onclick=()=>checkAnswer(opt.id,currentCorrect)
+    container.appendChild(btn)
 })
 
 document.getElementById("result").innerHTML=""
-
 }
 
 /* ================= BUTTON CONTROL ================= */
@@ -295,6 +318,11 @@ function disableButtons(){
 const buttons=document.querySelectorAll(".quiz-btn")
 buttons.forEach(btn=>btn.disabled=true)
 
+}
+
+function enableButtons(){
+    const buttons = document.querySelectorAll(".quiz-btn")
+    buttons.forEach(btn => btn.disabled = false)
 }
 
 /* ================= RANKING ================= */
@@ -354,6 +382,8 @@ localStorage.removeItem("quizScore")
 localStorage.removeItem("quizStreak")
 localStorage.removeItem("quizTime")
 localStorage.removeItem("quizStarted")
+
+usedCharacters = []
 
 }
 
