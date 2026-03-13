@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Quiz - UmaIndex</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="icon" href="{{ url_for('static', filename='img/icon.png') }}?v=2">
+
+<style>
+@font-face{
+font-family:title1;
+src:url(/static/img/DailyVibes.otf);
+}
+</style>
+</head>
+
+<body class="quiz-page">
+
+<header class="main-header">
+<h1 class="logo"><span style="color:#ff1a8c;">Uma</span>Quiz!</h1>
+<a class="back-btn" href="/">⬅ Voltar</a>
+</header>
+
+<div class="quiz-layout">
+
+<div class="quiz-area">
+
+<!-- MENU -->
+
+<div id="startMenu" class="quiz-card">
+
+<h2>UmaQuiz</h2>
+
+<p>
+Você tem 60 segundos para adivinhar
+o máximo de UmaMusumes!
+</p>
+
+<button onclick="startGame()" class="start-btn">
+▶ Começar Jogo
+</button>
+
+</div>
+
+
+<!-- QUIZ -->
+
+<div id="quizGame" class="quiz-card" style="display:none;">
+
+<div class="quiz-image">
+<img src="{{ correct['thumb_img'] }}" id="quizImage">
+</div>
+
+<h2 class="quiz-question">
+Quem é essa UmaMusume?
+</h2>
+
+<div class="quiz-options" id="optionsContainer">
+
+{% for option in options %}
+
+<button
+class="quiz-btn"
+onclick="checkAnswer('{{ option['id'] }}','{{ correct['id'] }}')">
+
+{{ option['name_en'] }}
+
+</button>
+
+{% endfor %}
+
+</div>
+
+<h3 id="result"></h3>
+
+</div>
+
+</div>
+
+
+<!-- SIDEBAR -->
+
+<div class="quiz-sidebar">
+
+<h3>🏆 Ranking</h3>
+
+<ol id="rankingList"></ol>
+
+<button onclick="resetRanking()" class="reset-ranking">
+Limpar Ranking
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* ================= VARIAVEIS ================= */
+
+let score = parseInt(localStorage.getItem("quizScore")) || 0
+let streak = parseInt(localStorage.getItem("quizStreak")) || 0
+let timeLeft = parseInt(localStorage.getItem("quizTime")) || 60
+let answered = false
+
+let gameStarted = localStorage.getItem("quizStarted") === "true"
+
+let currentCorrect = "{{ correct['id'] }}"
+
+let timer
+
+/* ================= SCORE / TIMER ================= */
+
+const scoreDisplay = document.createElement("div")
+const timerDisplay = document.createElement("div")
+
+scoreDisplay.id="score"
+timerDisplay.id="timer"
+
+document.getElementById("quizGame").prepend(timerDisplay)
+document.getElementById("quizGame").prepend(scoreDisplay)
+
+/* ================= INIT ================= */
+
+updateUI()
+loadRanking()
+
+if(gameStarted){
+
+document.getElementById("startMenu").style.display="none"
+document.getElementById("quizGame").style.display="flex"
+
+startTimer()
+
+}
+
+/* ================= START ================= */
+
+function startGame(){
+
+localStorage.setItem("quizStarted","true")
+
+document.getElementById("startMenu").style.display="none"
+document.getElementById("quizGame").style.display="flex"
+
+startTimer()
+
+}
+
+/* ================= TIMER ================= */
+
+function startTimer(){
+
+timer=setInterval(()=>{
+
+timeLeft--
+
+localStorage.setItem("quizTime",timeLeft)
+
+updateUI()
+
+if(timeLeft<=0){
+
+clearInterval(timer)
+gameOver()
+
+}
+
+},1000)
+
+}
+
+/* ================= GAME OVER ================= */
+
+function gameOver(){
+
+disableButtons()
+
+let playerName=prompt("Tempo acabou! Pontuação: "+score+"\nDigite seu nome:")
+
+if(playerName){
+
+saveScore(playerName,score)
+
+}
+
+document.getElementById("result").innerHTML="Fim de jogo!"
+document.getElementById("result").style.color="#ffd166"
+
+resetGame()
+
+}
+
+/* ================= UI ================= */
+
+function updateUI(){
+
+scoreDisplay.innerHTML="Pontuação: "+score
+timerDisplay.innerHTML="Tempo: "+timeLeft
+
+}
+
+/* ================= QUIZ ================= */
+
+function checkAnswer(selected,correct){
+
+if(answered) return
+answered=true
+
+const result=document.getElementById("result")
+const buttons=document.querySelectorAll(".quiz-btn")
+
+buttons.forEach(btn=>btn.disabled=true)
+
+if(selected===correct){
+
+streak++
+
+let points=10
+
+if(streak>=3){
+points+=3
+}
+
+score+=points
+
+result.innerHTML="🎉 Acertou! +"+points
+result.style.color="#6dff7a"
+
+}else{
+
+streak=0
+
+result.innerHTML="❌ Errou!"
+result.style.color="#ff4d4d"
+
+}
+
+localStorage.setItem("quizScore",score)
+localStorage.setItem("quizStreak",streak)
+
+updateUI()
+
+setTimeout(loadNextQuestion,800)
+
+}
+
+/* ================= PROXIMA PERGUNTA ================= */
+
+async function loadNextQuestion(){
+
+answered=false
+
+const response=await fetch("/quiz/next")
+const data=await response.json()
+
+currentCorrect=data.correct_id
+
+/* trocar imagem */
+
+document.getElementById("quizImage").src=data.image
+
+/* preload imagem */
+
+const img=new Image()
+img.src=data.image
+
+/* atualizar opções */
+
+const container=document.getElementById("optionsContainer")
+
+container.innerHTML=""
+
+data.options.forEach(opt=>{
+
+const btn=document.createElement("button")
+
+btn.className="quiz-btn"
+btn.innerText=opt.name
+
+btn.onclick=()=>checkAnswer(opt.id,currentCorrect)
+
+container.appendChild(btn)
+
+})
+
+document.getElementById("result").innerHTML=""
+
+}
+
+/* ================= BUTTON CONTROL ================= */
+
+function disableButtons(){
+
+const buttons=document.querySelectorAll(".quiz-btn")
+buttons.forEach(btn=>btn.disabled=true)
+
+}
+
+/* ================= RANKING ================= */
+
+function loadRanking(){
+
+let ranking=JSON.parse(localStorage.getItem("quizRanking"))||[]
+
+const list=document.getElementById("rankingList")
+
+list.innerHTML=""
+
+ranking.forEach(player=>{
+
+const li=document.createElement("li")
+
+li.innerHTML=`${player.name} — ${player.score}`
+
+list.appendChild(li)
+
+})
+
+}
+
+function saveScore(name,score){
+
+let ranking=JSON.parse(localStorage.getItem("quizRanking"))||[]
+
+ranking.push({
+name:name,
+score:score
+})
+
+ranking.sort((a,b)=>b.score-a.score)
+
+ranking=ranking.slice(0,5)
+
+localStorage.setItem("quizRanking",JSON.stringify(ranking))
+
+loadRanking()
+
+}
+
+function resetRanking(){
+
+localStorage.removeItem("quizRanking")
+
+loadRanking()
+
+}
+
+/* ================= RESET ================= */
+
+function resetGame(){
+
+localStorage.removeItem("quizScore")
+localStorage.removeItem("quizStreak")
+localStorage.removeItem("quizTime")
+localStorage.removeItem("quizStarted")
+
+}
+
+</script>
+
+</body>
+</html>
