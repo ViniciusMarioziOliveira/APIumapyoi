@@ -16,7 +16,7 @@
 <header class="main-header">
     <h1 class="logo"><span style="color: #ff1a8c;">Uma</span>Index!</h1>
     <div class="header-actions">
-        <input type="text" id="searchInput" autocomplete="off"  placeholder="Buscar personagem...">
+        <input type="text" id="searchInput" autocomplete="off" placeholder="Buscar personagem...">
     </div>
 </header>
 
@@ -37,53 +37,69 @@
         </div>
     </div>
 
-    <aside class="sidebar">
+    <!-- COLUNA DIREITA -->
+    <div class="right-column">
+
+        <aside class="sidebar">
+
+            <h2> Personagem <span style="color: #ff1a8c;">Aleatório!</span> </h2>
+
+            <div class="random-mini-card">
+                <img src="{{ random_character['thumb_img'] }}" 
+                     alt="{{ random_character['name_en'] }}">
+
+                <div class="random-mini-content">
+                    <h3>{{ random_character['name_en'] }}</h3>
+                    <span class="jp-name">
+                        {{ random_character['name_jp'] }}
+                    </span>
+
+                    <a class="mini-btn"
+                       href="/character/{{ random_character['id'] }}">
+                       Ver
+                    </a>
+                </div>
+            </div>
+
+            <h2>Aniversariantes do mês</h2>
+
+            <div class="birthday-scroll">
+                <table class="birthday-table">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Data</th>
+                    </tr>
+
+                    {% if birthdays %}
+                        {% for b in birthdays|sort(attribute="day") %}
+                        <tr>
+                            <td>{{ b.name }}</td>
+                            <td>{{ b.day }}/{{ b.month }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="2">Nenhum aniversário este mês</td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+
+        </aside>
+
+        <!-- CARD DO QUIZ (SEPARADO) -->
+        <div class="quiz-widget">
+
+            <h2>Você realmente conhece as <br> <strong style="color: #ff1a8c;">Umamusumes</strong>? 🏇</h2>
 
 
-<h2> Personagem <span style="color: #ff1a8c;">Aleatório!</span> </h2>
+            <a href="/quiz" class="quiz-start-btn">
+                Fazer o Quiz
+            </a>
 
-<div class="random-mini-card">
-    <img src="{{ random_character['thumb_img'] }}" 
-         alt="{{ random_character['name_en'] }}">
+        </div>
 
-    <div class="random-mini-content">
-        <h3>{{ random_character['name_en'] }}</h3>
-        <span class="jp-name">
-            {{ random_character['name_jp'] }}
-        </span>
-
-        <a class="mini-btn"
-           href="/character/{{ random_character['id'] }}">
-           Ver
-        </a>
     </div>
-</div>
-
-
-<h2>Aniversariantes do mês</h2>
-
-<div class="birthday-scroll">
-    <table class="birthday-table">
-        <tr>
-            <th>Nome</th>
-            <th>Data</th>
-        </tr>
-
-        {% if birthdays %}
-            {% for b in birthdays|sort(attribute="day") %}
-            <tr>
-                <td>{{ b.name }}</td>
-                <td>{{ b.day }}/{{ b.month }}</td>
-            </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td colspan="2">Nenhum aniversário este mês</td>
-            </tr>
-        {% endif %}
-    </table>
-</div>
-    </aside>
 
 </div>
 
@@ -106,5 +122,6 @@ searchInput.addEventListener("keyup", function () {
     });
 });
 </script>
+
 </body>
 </html>
