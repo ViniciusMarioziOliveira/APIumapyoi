@@ -272,16 +272,27 @@ h1, h2, h3, h4 {
     width: 100%;
 }
 
+/* ================= DYNAMIC CARD (color_main) ================= */
+
+.dynamic-card {
+    --char-color:       #ff5bac;
+    --char-color-faint: rgba(255,91,172,0.09);
+    --char-color-mid:   rgba(255,91,172,0.25);
+    --char-color-glow:  rgba(255,91,172,0.55);
+}
+
 /* Animação de entrada escalonada */
 .card {
-    background: var(--bg-card);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border-radius: var(--radius-md);
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255,255,255,0.10);
     box-shadow: var(--shadow-card);
-    transition: transform 0.32s var(--ease-bounce), box-shadow 0.32s ease, border-color 0.3s;
+    transition:
+        transform    0.34s var(--ease-bounce),
+        box-shadow   0.34s ease,
+        border-color 0.3s;
     animation: fadeInUp 0.55s var(--ease-smooth) both;
     position: relative;
 }
@@ -296,12 +307,12 @@ h1, h2, h3, h4 {
     height: 100%;
     background: linear-gradient(to right,
         transparent,
-        rgba(255,255,255,0.10),
+        rgba(255,255,255,0.12),
         transparent);
     transform: skewX(-20deg);
-    transition: left 0.5s;
+    transition: left 0.55s ease;
     pointer-events: none;
-    z-index: 2;
+    z-index: 3;
 }
 
 .card:hover::before {
@@ -321,10 +332,36 @@ h1, h2, h3, h4 {
 .card:nth-child(10) { animation-delay: 0.29s; }
 .card:nth-child(n+11) { animation-delay: 0.32s; }
 
-.card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 45px rgba(0,0,0,0.55), var(--shadow-pink);
-    border-color: var(--pink-light);
+/* Hover com glow dinâmico usando --char-color */
+.dynamic-card:hover {
+    transform: translateY(-9px) scale(1.03);
+    box-shadow:
+        0 22px 50px rgba(0,0,0,0.55),
+        0 0  22px var(--char-color-glow),
+        0 0  45px var(--char-color-mid);
+    border-color: var(--char-color);
+}
+
+/* Faixa colorida sutil que passa no centro da imagem */
+.card-img-wrap {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-color-stripe {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Botão dinâmico: no hover, intensifica a sombra */
+.dynamic-btn:hover {
+    filter: brightness(1.15) saturate(1.2);
+    transform: translateY(-3px);
 }
 
 .card img {
@@ -355,9 +392,11 @@ h1, h2, h3, h4 {
 .jp-name {
     display: block;
     font-size: 11px;
-    color: var(--text-dim);
+    color: var(--char-color, var(--text-dim));
     margin-bottom: 12px;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-shadow: 0 0 8px var(--char-color-faint, transparent);
 }
 
 /* ================= BOTÕES "CHICLETE" ================= */

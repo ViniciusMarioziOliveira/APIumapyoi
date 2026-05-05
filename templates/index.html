@@ -25,12 +25,31 @@
     <div class="cards-area">
         <div class="grid">
             {% for char in characters %}
-            <div class="card">
-                <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
+            {% set c = char.get('color_main', '#ff5bac') %}
+            <div class="card dynamic-card"
+                 style="
+                    --char-color: {{ c }};
+                    --char-color-faint: {{ c }}18;
+                    --char-color-mid: {{ c }}40;
+                    --char-color-glow: {{ c }}88;
+                    border-top: 4px solid {{ c }};
+                    background: linear-gradient(160deg, {{ c }}12 0%, rgba(26,16,48,0.55) 60%);
+                 ">
+                <div class="card-img-wrap">
+                    <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
+                    <div class="card-color-stripe" style="background: linear-gradient(to right, {{ c }}00, {{ c }}55, {{ c }}00);"></div>
+                </div>
                 <div class="card-content">
                     <h2>{{ char['name_en'] }}</h2>
-                    <span class="jp-name">{{ char['name_jp'] }}</span>
-                    <a class="btn" href="/character/{{ char['id'] }}">Ver detalhes</a>
+                    <span class="jp-name" style="color: {{ c }}cc;">{{ char['name_jp'] }}</span>
+                    <a class="btn dynamic-btn"
+                       href="/character/{{ char['id'] }}"
+                       style="
+                          background: linear-gradient(180deg, {{ c }}ee 0%, {{ c }} 60%, {{ c }}bb 100%);
+                          box-shadow: 0 4px 0 {{ c }}77, 0 6px 18px {{ c }}44;
+                       ">
+                        Ver detalhes
+                    </a>
                 </div>
             </div>
             {% endfor %}
