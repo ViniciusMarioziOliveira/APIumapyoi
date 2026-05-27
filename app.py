@@ -46,9 +46,21 @@ def index():
 
     random_character = random.choice(characters) if characters else None
 
+    # Separação por categoria
+    umamusume_chars = [
+        c for c in characters
+        if c.get("category_label_en", "").strip().lower() == "umamusume"
+    ]
+    related_chars = [
+        c for c in characters
+        if c.get("category_label_en", "").strip().lower() != "umamusume"
+    ]
+
     return render_template(
         "index.html",
         characters=characters,
+        umamusume_chars=umamusume_chars,
+        related_chars=related_chars,
         birthdays=birthday_list,
         random_character=random_character
     )

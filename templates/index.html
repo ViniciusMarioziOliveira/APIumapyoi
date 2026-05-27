@@ -9,6 +9,63 @@
             font-family: title1;
             src: url(/static/img/DailyVibes.otf);
         }
+
+        /* ── Cabeçalhos de seção ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .section-header h2 {
+            font-family: var(--font-title);
+            font-size: 26px;
+            white-space: nowrap;
+        }
+
+        .section-header .section-line {
+            flex: 1;
+            height: 2px;
+            border-radius: 2px;
+            opacity: 0.5;
+        }
+
+        .section-header .section-count {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            opacity: 0.85;
+            white-space: nowrap;
+        }
+
+        /* Seção Umamusume — rosa */
+        .section-uma .section-line {
+            background: linear-gradient(to right, var(--pink), transparent);
+        }
+        .section-uma h2 { color: var(--pink-light); }
+        .section-uma .section-count {
+            background: rgba(255, 91, 172, 0.18);
+            border: 1px solid rgba(255, 91, 172, 0.40);
+            color: var(--pink-light);
+        }
+
+        /* Seção Related Parties — dourado */
+        .section-related .section-line {
+            background: linear-gradient(to right, var(--gold), transparent);
+        }
+        .section-related h2 { color: var(--gold); }
+        .section-related .section-count {
+            background: rgba(255, 209, 102, 0.15);
+            border: 1px solid rgba(255, 209, 102, 0.35);
+            color: var(--gold);
+        }
+
+        /* Espaço entre as duas seções */
+        .section-block + .section-block {
+            margin-top: 48px;
+        }
     </style>
 </head>
 <body>
@@ -23,37 +80,93 @@
 <div class="index-layout">
 
     <div class="cards-area">
-        <div class="grid">
-            {% for char in characters %}
-            {% set c = char.get('color_main', '#ff5bac') %}
-            <div class="card dynamic-card"
-                 style="
-                    --char-color: {{ c }};
-                    --char-color-faint: {{ c }}18;
-                    --char-color-mid: {{ c }}40;
-                    --char-color-glow: {{ c }}88;
-                    border-top: 4px solid {{ c }};
-                    background: linear-gradient(160deg, {{ c }}12 0%, rgba(26,16,48,0.55) 60%);
-                 ">
-                <div class="card-img-wrap">
-                    <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
-                    <div class="card-color-stripe" style="background: linear-gradient(to right, {{ c }}00, {{ c }}55, {{ c }}00);"></div>
-                </div>
-                <div class="card-content">
-                    <h2>{{ char['name_en'] }}</h2>
-                    <span class="jp-name" style="color: {{ c }}cc;">{{ char['name_jp'] }}</span>
-                    <a class="btn dynamic-btn"
-                       href="/character/{{ char['id'] }}"
-                       style="
-                          background: linear-gradient(180deg, {{ c }}ee 0%, {{ c }} 60%, {{ c }}bb 100%);
-                          box-shadow: 0 4px 0 {{ c }}77, 0 6px 18px {{ c }}44;
-                       ">
-                        Ver detalhes
-                    </a>
-                </div>
+
+        <!-- ══════════════════════════════════
+             SEÇÃO 1 — UMAMUSUME
+        ══════════════════════════════════ -->
+        <div class="section-block">
+            <div class="section-header section-uma">
+                <h2>Umamusume</h2>
+                <div class="section-line"></div>
+                <span class="section-count">{{ umamusume_chars | length }} personagens</span>
             </div>
-            {% endfor %}
+
+            <div class="grid" id="grid-uma">
+                {% for char in umamusume_chars %}
+                {% set c = char.get('color_main', '#ff5bac') %}
+                <div class="card dynamic-card"
+                     style="
+                        --char-color: {{ c }};
+                        --char-color-faint: {{ c }}18;
+                        --char-color-mid: {{ c }}40;
+                        --char-color-glow: {{ c }}88;
+                        border-top: 4px solid {{ c }};
+                        background: linear-gradient(160deg, {{ c }}12 0%, rgba(26,16,48,0.55) 60%);
+                     ">
+                    <div class="card-img-wrap">
+                        <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
+                        <div class="card-color-stripe" style="background: linear-gradient(to right, {{ c }}00, {{ c }}55, {{ c }}00);"></div>
+                    </div>
+                    <div class="card-content">
+                        <h2>{{ char['name_en'] }}</h2>
+                        <span class="jp-name" style="color: {{ c }}cc;">{{ char['name_jp'] }}</span>
+                        <a class="btn dynamic-btn"
+                           href="/character/{{ char['id'] }}"
+                           style="
+                              background: linear-gradient(180deg, {{ c }}ee 0%, {{ c }} 60%, {{ c }}bb 100%);
+                              box-shadow: 0 4px 0 {{ c }}77, 0 6px 18px {{ c }}44;
+                           ">
+                            Ver detalhes
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
+
+        <!-- ══════════════════════════════════
+             SEÇÃO 2 — RELATED PARTIES
+        ══════════════════════════════════ -->
+        <div class="section-block">
+            <div class="section-header section-related">
+                <h2>Related Parties</h2>
+                <div class="section-line"></div>
+                <span class="section-count">{{ related_chars | length }} personagens</span>
+            </div>
+
+            <div class="grid" id="grid-related">
+                {% for char in related_chars %}
+                {% set c = char.get('color_main', '#ffd166') %}
+                <div class="card dynamic-card"
+                     style="
+                        --char-color: {{ c }};
+                        --char-color-faint: {{ c }}18;
+                        --char-color-mid: {{ c }}40;
+                        --char-color-glow: {{ c }}88;
+                        border-top: 4px solid {{ c }};
+                        background: linear-gradient(160deg, {{ c }}12 0%, rgba(26,16,48,0.55) 60%);
+                     ">
+                    <div class="card-img-wrap">
+                        <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
+                        <div class="card-color-stripe" style="background: linear-gradient(to right, {{ c }}00, {{ c }}55, {{ c }}00);"></div>
+                    </div>
+                    <div class="card-content">
+                        <h2>{{ char['name_en'] }}</h2>
+                        <span class="jp-name" style="color: {{ c }}cc;">{{ char['name_jp'] }}</span>
+                        <a class="btn dynamic-btn"
+                           href="/character/{{ char['id'] }}"
+                           style="
+                              background: linear-gradient(180deg, {{ c }}ee 0%, {{ c }} 60%, {{ c }}bb 100%);
+                              box-shadow: 0 4px 0 {{ c }}77, 0 6px 18px {{ c }}44;
+                           ">
+                            Ver detalhes
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
     </div>
 
     <!-- COLUNA DIREITA -->
@@ -111,7 +224,6 @@
 
             <h2>Você realmente conhece as <br> <strong style="color: #ff1a8c;">Umamusumes</strong>? 🏇</h2>
 
-
             <a href="/quiz" class="quiz-start-btn">
                 Fazer o Quiz
             </a>
@@ -132,12 +244,14 @@ searchInput.addEventListener("keyup", function () {
 
     cards.forEach(card => {
         const name = card.querySelector("h2").textContent.toLowerCase();
+        card.style.display = name.includes(value) ? "block" : "none";
+    });
 
-        if (name.includes(value)) {
-            card.style.display = "block";
-        } else {
-            card.style.display = "none";
-        }
+    // Esconde o cabeçalho da seção se todos os cards dela estiverem ocultos
+    document.querySelectorAll(".section-block").forEach(section => {
+        const visibleCards = [...section.querySelectorAll(".card")]
+            .filter(c => c.style.display !== "none");
+        section.style.display = visibleCards.length === 0 ? "none" : "";
     });
 });
 </script>
