@@ -1,154 +1,264 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ character['name_en'] }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='img/icon.png') }}?v=2">
-    <style>
-        @font-face {
-            font-family: title1;
-            src: url(/static/img/DailyVibes.otf);
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+{% set c = character %}
 
-<a class="back-btn" href="/">⬅ Voltar</a>
+{% block title %}{{ c.name_en }} — UmaIndex!{% endblock %}
+{% block description %}{{ c.slogan or c.profile or ('Perfil de ' ~ c.name_en ~ ' em Umamusume Pretty Derby.') }}{% endblock %}
 
-<div class="detail-container">
+{% block head %}
+{% if outfits %}<link rel="preload" as="image" href="{{ outfits[0].image|img(height=1400) }}">{% endif %}
+{% endblock %}
 
-    <!-- ===================== LADO ESQUERDO: Palco da Personagem ===================== -->
-    <div class="detail-left"
-         style="--char-color: {{ character.get('color_main', '#f72585') }}">
+{% block content %}
+<div class="char-page"
+     style="--c: {{ c.color_main }}; --c-sub: {{ c.color_sub }}; --c-ink: {{ c.color_ink }}; --c-on: {{ c.color_on }};">
+    <div class="char-layout">
 
-        {% if image_groups and image_groups|length > 0 %}
+        <!-- ===================== NAVEGAÇÃO ===================== -->
+        <nav class="char-nav" aria-label="Navegação entre personagens">
+            <a class="back-btn" href="/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+                <span>Voltar</span>
+            </a>
 
-            <img id="character-img"
-                 src="{{ image_groups[0]['images'][0]['image'] }}"
-                 alt="{{ character['name_en'] }}">
+            {% if prev_char and next_char %}
+            <div class="char-pager">
+                <a class="pager-link" href="/character/{{ prev_char.id }}" rel="prev"
+                   style="--pc: {{ prev_char.color_main }};" aria-label="Anterior: {{ prev_char.name_en }}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+                    <img src="{{ prev_char.thumb_img|img(96) }}" alt="" width="32" height="32">
+                    <span class="pager-name">{{ prev_char.name_en }}</span>
+                </a>
+                <a class="pager-link pager-next" href="/character/{{ next_char.id }}" rel="next"
+                   style="--pc: {{ next_char.color_main }};" aria-label="Próxima: {{ next_char.name_en }}">
+                    <span class="pager-name">{{ next_char.name_en }}</span>
+                    <img src="{{ next_char.thumb_img|img(96) }}" alt="" width="32" height="32">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg>
+                </a>
+            </div>
+            {% endif %}
+        </nav>
 
-            <!-- Menu de roupas com miniaturas circulares -->
-            {% if image_groups|length > 1 %}
-            <div class="outfit-buttons">
-                {% for group in image_groups %}
-                <button class="outfit-btn {% if loop.first %}active{% endif %}"
-                        onclick="changeImage(this, '{{ group['images'][0]['image'] }}')"
-                        title="{{ group.get('label_en', 'Outfit') }}"
-                        style="background-image: url('{{ group['images'][0]['image'] }}'); background-size: cover; background-position: top center;">
+        <!-- ===================== NOME ===================== -->
+        <header class="title-block">
+            <span class="category-badge">{{ c.category_label_en or 'Umamusume' }}</span>
+            <h1>{{ c.name_en }}</h1>
+            <p class="title-jp" lang="ja">{{ c.name_jp }}</p>
+            {% if c.slogan %}<p class="slogan">{{ c.slogan }}</p>{% endif %}
+        </header>
+
+        <!-- ===================== PALCO DA PERSONAGEM ===================== -->
+        <section class="stage" aria-label="Ilustração de {{ c.name_en }}">
+            <div class="stage-art">
+                <span class="stage-watermark" aria-hidden="true" lang="ja">{{ c.name_jp }}</span>
+
+                {% if outfits %}
+                <img id="character-img" class="stage-img"
+                     src="{{ outfits[0].image|img(height=1400) }}"
+                     alt="{{ c.name_en }} — {{ outfits[0].label }}"
+                     width="1125" height="1980" fetchpriority="high">
+                {% else %}
+                <img class="stage-img stage-img-thumb"
+                     src="{{ c.thumb_img|img(640) }}"
+                     alt="{{ c.name_en }}" width="296" height="389">
+                {% endif %}
+            </div>
+
+            {% if outfits|length > 1 %}
+            <div class="outfit-tabs" role="group" aria-label="Roupas">
+                {% for o in outfits %}
+                <button type="button" class="outfit-btn{% if loop.first %} is-active{% endif %}"
+                        data-src="{{ o.image|img(height=1400) }}"
+                        data-label="{{ o.label }}"
+                        aria-pressed="{{ 'true' if loop.first else 'false' }}">
+                    <img src="{{ o.image|bust(96) }}" alt="" width="36" height="36" loading="lazy">
+                    <span>{{ o.label }}</span>
                 </button>
                 {% endfor %}
             </div>
             {% endif %}
+        </section>
 
-        {% else %}
-            <img src="{{ character['thumb_img'] }}" alt="{{ character['name_en'] }}">
-        {% endif %}
+        <!-- ===================== INFORMAÇÕES ===================== -->
+        <div class="char-details">
 
-    </div>
+            {% if c.profile %}
+            <blockquote class="profile-highlight">
+                <p>{{ c.profile }}</p>
+            </blockquote>
+            {% endif %}
 
-    <!-- ===================== LADO DIREITO: Informações ===================== -->
-    <div class="detail-right"
-         style="--char-color: {{ character.get('color_main', '#f72585') }}">
+            {% set bday = c|birthday %}
+            {% if bday or c.height or c.grade %}
+            <ul class="info-ribbons">
+                {% if bday %}
+                <li class="info-ribbon">
+                    <span class="info-ribbon-icon" aria-hidden="true">🎂</span>
+                    <span><small>Aniversário</small><b>{{ bday }}</b></span>
+                </li>
+                {% endif %}
+                {% if c.height %}
+                <li class="info-ribbon">
+                    <span class="info-ribbon-icon" aria-hidden="true">📏</span>
+                    <span><small>Altura</small><b>{{ c.height }} cm</b></span>
+                </li>
+                {% endif %}
+                {% if c.grade %}
+                <li class="info-ribbon">
+                    <span class="info-ribbon-icon" aria-hidden="true">🎓</span>
+                    <span><small>Série</small><b>{{ c.grade }}</b></span>
+                </li>
+                {% endif %}
+            </ul>
+            {% endif %}
 
-        <!-- Bloco de nome -->
-        <div class="title-block">
-            <h1>{{ character['name_en'] }}</h1>
-            <h3 class="jp-name">{{ character['name_jp'] }}</h3>
-        </div>
+            {% if c.voice %}
+            <div class="voice-player" id="voicePlayer">
+                <button type="button" class="voice-btn" id="voiceBtn" aria-label="Ouvir a voz">
+                    <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+                    <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+                </button>
+                <div class="voice-meta">
+                    <span class="voice-title" id="voiceTitle">Ouvir apresentação</span>
+                    <span class="voice-track"><span class="voice-progress" id="voiceProgress"></span></span>
+                </div>
+                <span class="voice-time" id="voiceTime">0:00</span>
+                <audio id="voiceAudio" preload="none" src="{{ c.voice }}"></audio>
+            </div>
+            {% endif %}
 
-        <!-- Frase de destaque do perfil -->
-        {% if character.profile %}
-        <div class="profile-highlight">
-            <p>{{ character.profile }}</p>
-        </div>
-        {% endif %}
+            {% if profile_rows %}
+            <section class="panel">
+                <h2 class="panel-title">Perfil</h2>
+                <dl class="profile-table">
+                    {% for row in profile_rows %}
+                    <div class="profile-row">
+                        <dt>{{ row.label }}</dt>
+                        <dd>{{ row.value }}</dd>
+                    </div>
+                    {% endfor %}
+                </dl>
+            </section>
+            {% endif %}
 
-        <!-- Faixas de informação: Aniversário e Altura -->
-        <div class="info-ribbons">
+            {% if facts %}
+            <section class="panel">
+                <h2 class="panel-title">Curiosidades</h2>
+                <div class="facts-grid">
+                    {% for f in facts %}
+                    <div class="fact-card">
+                        <span class="fact-icon" aria-hidden="true">{{ f.icon }}</span>
+                        <h3>{{ f.label }}</h3>
+                        <p>{{ f.text }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
 
-            <div class="info-ribbon">
-                <div class="info-ribbon-body">
-                    <span class="info-ribbon-icon">🎂</span>
-                    <div>
-                        <div class="info-ribbon-label">Aniversário</div>
-                        <div class="info-ribbon-value">
-                            {% if character.birth_day and character.birth_month %}
-                            {{ character.birth_day }}/{{ character.birth_month }}
-                            {% else %}
-                            N/A
-                            {% endif %}
-                        </div>
+            {% if not (c.profile or profile_rows or facts) %}
+            <p class="empty-note panel">A API ainda não tem a ficha completa desta personagem.</p>
+            {% endif %}
+
+            <section class="panel panel-compact">
+                <h2 class="panel-title">Cores</h2>
+                <div class="color-swatches">
+                    <div class="swatch">
+                        <span class="swatch-box"></span>
+                        <span><small>Principal</small><code>{{ c.color_main|upper }}</code></span>
+                    </div>
+                    <div class="swatch swatch-sub">
+                        <span class="swatch-box"></span>
+                        <span><small>Secundária</small><code>{{ c.color_sub|upper }}</code></span>
                     </div>
                 </div>
-                <div class="info-ribbon-arrow"></div>
-
-            </div>
-
-            <div class="info-ribbon">
-                <div class="info-ribbon-body">
-                    <span class="info-ribbon-icon">📏</span>
-                    <div>
-                        <div class="info-ribbon-label">Altura</div>
-                        <div class="info-ribbon-value">{{ character.get('height', 'N/A') }} cm</div>
-                    </div>
-                </div>
-                <div class="info-ribbon-arrow"></div>
-
-            </div>
+                {% if c.link %}
+                <a class="official-link" href="{{ c.link }}" target="_blank" rel="noopener">
+                    Ver no site oficial
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg>
+                </a>
+                {% endif %}
+            </section>
 
         </div>
-
-        <!-- Grid de informações secundárias: Categoria e Cor -->
-        <div class="info-grid">
-
-            <div class="info-card">
-                <span>Categoria</span>
-                <strong>{{ character.get('category_label_en', 'N/A') }}</strong>
-            </div>
-
-            <div class="info-card color-card">
-                <span>Cor Principal</span>
-                <div class="color-preview">
-                    <span class="color-box" style="background: {{ character.get('color_main', '#ccc') }}"></span>
-                    {{ character.get('color_main', '#ccc') }}
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Áudio da voz -->
-        {% if character.voice %}
-        <div class="section voice-box">
-            <h2>Voz</h2>
-            <audio controls>
-                <source src="{{ character.voice }}" type="audio/mpeg">
-            </audio>
-        </div>
-        {% endif %}
-
     </div>
-
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-function changeImage(button, src) {
+(() => {
+    /* ================= TROCA DE ROUPA ================= */
+
     const img = document.getElementById("character-img");
+    const buttons = document.querySelectorAll(".outfit-btn");
 
-    // Transição suave
-    img.style.opacity = '0';
-    setTimeout(() => {
-        img.src = src;
-        img.style.opacity = '1';
-    }, 180);
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+            if (button.classList.contains("is-active")) return;
 
-    // Remove classe ativa de todos
-    document.querySelectorAll(".outfit-btn").forEach(btn => {
-        btn.classList.remove("active");
+            buttons.forEach(b => {
+                b.classList.toggle("is-active", b === button);
+                b.setAttribute("aria-pressed", b === button);
+            });
+
+            // Carrega a imagem antes de trocar, para a transição ficar suave
+            const next = new Image();
+            next.src = button.dataset.src;
+            img.classList.add("is-switching");
+
+            const swap = () => {
+                img.src = next.src;
+                img.alt = img.alt.split(" — ")[0] + " — " + button.dataset.label;
+                img.classList.remove("is-switching");
+            };
+            next.decode().then(swap, swap);
+        });
     });
 
-    // Adiciona no clicado
-    button.classList.add("active");
-}
+    /* ================= PLAYER DE VOZ ================= */
+
+    const audio = document.getElementById("voiceAudio");
+    if (!audio) return;
+
+    const player   = document.getElementById("voicePlayer");
+    const btn      = document.getElementById("voiceBtn");
+    const progress = document.getElementById("voiceProgress");
+    const time     = document.getElementById("voiceTime");
+    const title    = document.getElementById("voiceTitle");
+
+    const fmt = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+    btn.addEventListener("click", () => {
+        if (audio.paused) {
+            audio.play().catch(() => {});
+        } else {
+            audio.pause();
+        }
+    });
+
+    audio.addEventListener("play", () => {
+        player.classList.add("is-playing");
+        btn.setAttribute("aria-label", "Pausar a voz");
+    });
+    audio.addEventListener("pause", () => {
+        player.classList.remove("is-playing");
+        btn.setAttribute("aria-label", "Ouvir a voz");
+    });
+    audio.addEventListener("timeupdate", () => {
+        if (!audio.duration) return;
+        progress.style.transform = `scaleX(${audio.currentTime / audio.duration})`;
+        time.textContent = fmt(audio.currentTime);
+    });
+    audio.addEventListener("ended", () => {
+        audio.currentTime = 0;
+        progress.style.transform = "scaleX(0)";
+        time.textContent = fmt(audio.duration);
+    });
+    audio.addEventListener("error", () => {
+        player.classList.add("is-error");
+        btn.disabled = true;
+        title.textContent = "Áudio indisponível";
+    });
+})();
 </script>
-</body>
-</html>
+{% endblock %}

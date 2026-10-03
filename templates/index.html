@@ -1,260 +1,270 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>UmaIndex!</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='img/icon.png') }}?v=2">
-    <style>
-        @font-face {
-            font-family: title1;
-            src: url(/static/img/DailyVibes.otf);
-        }
+{% extends "base.html" %}
 
-        /* ── Cabeçalhos de seção ── */
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 22px;
-        }
+{% block title %}UmaIndex! — Enciclopédia de Umamusume{% endblock %}
 
-        .section-header h2 {
-            font-family: var(--font-title);
-            font-size: 26px;
-            white-space: nowrap;
-        }
-
-        .section-header .section-line {
-            flex: 1;
-            height: 2px;
-            border-radius: 2px;
-            opacity: 0.5;
-        }
-
-        .section-header .section-count {
-            font-size: 12px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 20px;
-            opacity: 0.85;
-            white-space: nowrap;
-        }
-
-        /* Seção Umamusume — rosa */
-        .section-uma .section-line {
-            background: linear-gradient(to right, var(--pink), transparent);
-        }
-        .section-uma h2 { color: var(--pink-light); }
-        .section-uma .section-count {
-            background: rgba(255, 91, 172, 0.18);
-            border: 1px solid rgba(255, 91, 172, 0.40);
-            color: var(--pink-light);
-        }
-
-        /* Seção Related Parties — dourado */
-        .section-related .section-line {
-            background: linear-gradient(to right, var(--gold), transparent);
-        }
-        .section-related h2 { color: var(--gold); }
-        .section-related .section-count {
-            background: rgba(255, 209, 102, 0.15);
-            border: 1px solid rgba(255, 209, 102, 0.35);
-            color: var(--gold);
-        }
-
-        /* Espaço entre as duas seções */
-        .section-block + .section-block {
-            margin-top: 48px;
-        }
-    </style>
-</head>
-<body>
-
-<header class="main-header">
-    <h1 class="logo"><span style="color: #ff1a8c;">Uma</span>Index!</h1>
-    <div class="header-actions">
-        <input type="text" id="searchInput" autocomplete="off" placeholder="Buscar personagem...">
+{% macro char_card(char, i) -%}
+<a class="card"
+   href="/character/{{ char.id }}"
+   data-cat="{{ char.category }}"
+   data-search="{{ (char.name_en ~ ' ' ~ char.name_jp)|lower }}"
+   style="--c: {{ char.color_main }}; --c-sub: {{ char.color_sub }}; --c-ink: {{ char.color_ink }}; --c-on: {{ char.color_on }}; --i: {{ i }};">
+    <div class="card-media">
+        <img src="{{ char.thumb_img|img(320) }}" alt="" width="296" height="389"
+             loading="lazy" decoding="async">
     </div>
-</header>
+    <div class="card-body">
+        <h3 class="card-name">{{ char.name_en }}</h3>
+        <span class="card-jp" lang="ja">{{ char.name_jp }}</span>
+        <span class="card-cta">Ver perfil</span>
+    </div>
+</a>
+{%- endmacro %}
+
+{% block header_search %}
+<div class="header-search" role="search">
+    <label class="search-box">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+        <span class="sr-only">Buscar personagem</span>
+        <input type="search" id="searchInput" autocomplete="off" spellcheck="false"
+               placeholder="Buscar personagem...">
+        <kbd class="search-kbd" aria-hidden="true">/</kbd>
+    </label>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="hero-text">
+        <span class="eyebrow">Umamusume: Pretty Derby</span>
+        <h1>Encontre a sua <span class="hl">Umamusume</span> favorita!</h1>
+        <p>Perfis, roupas, vozes e curiosidades de {{ characters|length }} personagens da Tracen Academy.</p>
+    </div>
+
+    <div class="filter-chips" role="group" aria-label="Filtrar por categoria">
+        <button type="button" class="chip is-active" data-filter="all" aria-pressed="true">
+            Todas <span class="chip-count">{{ characters|length }}</span>
+        </button>
+        <button type="button" class="chip chip-uma" data-filter="uma" aria-pressed="false">
+            Umamusume <span class="chip-count">{{ umamusume_chars|length }}</span>
+        </button>
+        <button type="button" class="chip chip-related" data-filter="related" aria-pressed="false">
+            Relacionados <span class="chip-count">{{ related_chars|length }}</span>
+        </button>
+    </div>
+</section>
 
 <div class="index-layout">
 
-    <div class="cards-area">
+    <!-- ══════════ DESTAQUES (lateral no desktop, topo no celular) ══════════ -->
+    <aside class="side-panel" aria-label="Destaques">
 
-        <!-- ══════════════════════════════════
-             SEÇÃO 1 — UMAMUSUME
-        ══════════════════════════════════ -->
-        <div class="section-block">
-            <div class="section-header section-uma">
-                <h2>Umamusume</h2>
-                <div class="section-line"></div>
-                <span class="section-count">{{ umamusume_chars | length }} personagens</span>
-            </div>
+        {% set r = random_character %}
+        <section class="widget widget-random">
+            <h2 class="widget-title">Personagem <span class="hl">Aleatória!</span></h2>
 
-            <div class="grid" id="grid-uma">
-                {% for char in umamusume_chars %}
-                {% set c = char.get('color_main', '#ff5bac') %}
-                <div class="card dynamic-card"
-                     style="
-                        --char-color: {{ c }};
-                        --char-color-faint: {{ c }}18;
-                        --char-color-mid: {{ c }}40;
-                        --char-color-glow: {{ c }}88;
-                        border-top: 4px solid {{ c }};
-                        background: linear-gradient(160deg, {{ c }}12 0%, rgba(26,16,48,0.55) 60%);
-                     ">
-                    <div class="card-img-wrap">
-                        <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
-                        <div class="card-color-stripe" style="background: linear-gradient(to right, {{ c }}00, {{ c }}55, {{ c }}00);"></div>
-                    </div>
-                    <div class="card-content">
-                        <h2>{{ char['name_en'] }}</h2>
-                        <span class="jp-name" style="color: {{ c }}cc;">{{ char['name_jp'] }}</span>
-                        <a class="btn dynamic-btn"
-                           href="/character/{{ char['id'] }}"
-                           style="
-                              background: linear-gradient(180deg, {{ c }}ee 0%, {{ c }} 60%, {{ c }}bb 100%);
-                              box-shadow: 0 4px 0 {{ c }}77, 0 6px 18px {{ c }}44;
-                           ">
-                            Ver detalhes
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- ══════════════════════════════════
-             SEÇÃO 2 — RELATED PARTIES
-        ══════════════════════════════════ -->
-        <div class="section-block">
-            <div class="section-header section-related">
-                <h2>Related Parties</h2>
-                <div class="section-line"></div>
-                <span class="section-count">{{ related_chars | length }} personagens</span>
-            </div>
-
-            <div class="grid" id="grid-related">
-                {% for char in related_chars %}
-                {% set c = char.get('color_main', '#ffd166') %}
-                <div class="card dynamic-card"
-                     style="
-                        --char-color: {{ c }};
-                        --char-color-faint: {{ c }}18;
-                        --char-color-mid: {{ c }}40;
-                        --char-color-glow: {{ c }}88;
-                        border-top: 4px solid {{ c }};
-                        background: linear-gradient(160deg, {{ c }}12 0%, rgba(26,16,48,0.55) 60%);
-                     ">
-                    <div class="card-img-wrap">
-                        <img src="{{ char['thumb_img'] }}" alt="{{ char['name_en'] }}">
-                        <div class="card-color-stripe" style="background: linear-gradient(to right, {{ c }}00, {{ c }}55, {{ c }}00);"></div>
-                    </div>
-                    <div class="card-content">
-                        <h2>{{ char['name_en'] }}</h2>
-                        <span class="jp-name" style="color: {{ c }}cc;">{{ char['name_jp'] }}</span>
-                        <a class="btn dynamic-btn"
-                           href="/character/{{ char['id'] }}"
-                           style="
-                              background: linear-gradient(180deg, {{ c }}ee 0%, {{ c }} 60%, {{ c }}bb 100%);
-                              box-shadow: 0 4px 0 {{ c }}77, 0 6px 18px {{ c }}44;
-                           ">
-                            Ver detalhes
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-    </div>
-
-    <!-- COLUNA DIREITA -->
-    <div class="right-column">
-
-        <aside class="sidebar">
-
-            <h2> Personagem <span style="color: #ff1a8c;">Aleatório!</span> </h2>
-
-            <div class="random-mini-card">
-                <img src="{{ random_character['thumb_img'] }}" 
-                     alt="{{ random_character['name_en'] }}">
-
-                <div class="random-mini-content">
-                    <h3>{{ random_character['name_en'] }}</h3>
-                    <span class="jp-name">
-                        {{ random_character['name_jp'] }}
-                    </span>
-
-                    <a class="mini-btn"
-                       href="/character/{{ random_character['id'] }}">
-                       Ver
-                    </a>
-                </div>
-            </div>
-
-            <h2>Aniversariantes do mês</h2>
-
-            <div class="birthday-scroll">
-                <table class="birthday-table">
-                    <tr>
-                        <th>Nome</th>
-                        <th>Data</th>
-                    </tr>
-
-                    {% if birthdays %}
-                        {% for b in birthdays|sort(attribute="day") %}
-                        <tr>
-                            <td>{{ b.name }}</td>
-                            <td>{{ b.day }}/{{ b.month }}</td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="2">Nenhum aniversário este mês</td>
-                        </tr>
-                    {% endif %}
-                </table>
-            </div>
-
-        </aside>
-
-        <!-- CARD DO QUIZ (SEPARADO) -->
-        <div class="quiz-widget">
-
-            <h2>Você realmente conhece as <br> <strong style="color: #ff1a8c;">Umamusumes</strong>? 🏇</h2>
-
-            <a href="/quiz" class="quiz-start-btn">
-                Fazer o Quiz
+            <a class="random-card" id="randomCard" href="/character/{{ r.id }}"
+               style="--c: {{ r.color_main }}; --c-sub: {{ r.color_sub }}; --c-ink: {{ r.color_ink }}; --c-on: {{ r.color_on }};">
+                <img id="randomImg" src="{{ r.thumb_img|img(320) }}" alt="" width="296" height="389">
+                <span class="random-info">
+                    <strong id="randomName">{{ r.name_en }}</strong>
+                    <span class="random-jp" id="randomJp" lang="ja">{{ r.name_jp }}</span>
+                    <span class="mini-btn">Ver perfil</span>
+                </span>
             </a>
 
+            <button type="button" class="reroll-btn" id="rerollBtn">
+                <span aria-hidden="true">🎲</span> Sortear outra
+            </button>
+        </section>
+
+        <section class="widget widget-birthdays">
+            <h2 class="widget-title">Aniversariantes de {{ month_name }}</h2>
+
+            {% if birthdays %}
+            {% set upcoming = birthdays|selectattr('birth_day', 'ge', today.day)|first %}
+            <ul class="birthday-list" id="birthdayList">
+                {% for b in birthdays %}
+                {% set is_today = b.birth_day == today.day %}
+                <li{% if b is sameas upcoming %} id="birthdayNext"{% endif %}>
+                    <a class="birthday-item{% if is_today %} is-today{% elif b.birth_day < today.day %} is-past{% endif %}"
+                       href="/character/{{ b.id }}"
+                       style="--c: {{ b.color_main }}; --c-ink: {{ b.color_ink }};">
+                        <img src="{{ b.thumb_img|img(120) }}" alt="" width="44" height="44"
+                             loading="lazy" decoding="async">
+                        <span class="birthday-name">{{ b.name_en }}</span>
+                        <span class="birthday-date">
+                            {% if is_today %}🎂 Hoje!{% else %}{{ '%02d'|format(b.birth_day) }}/{{ '%02d'|format(b.birth_month) }}{% endif %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-note">Nenhum aniversário este mês.</p>
+            {% endif %}
+        </section>
+
+        <section class="widget widget-quiz">
+            <h2 class="widget-title widget-title-green">
+                Você realmente conhece as <span class="hl">Umamusumes</span>? <span aria-hidden="true">🏇</span>
+            </h2>
+            <p>60 segundos, 4 alternativas. Quantas você acerta?</p>
+            <a href="/quiz" class="btn-chiclete btn-green">Fazer o Quiz</a>
+        </section>
+
+    </aside>
+
+    <!-- ══════════ LISTA DE PERSONAGENS ══════════ -->
+    <div class="cards-area">
+
+        <section class="section-block section-uma" data-section="uma" aria-labelledby="title-uma">
+            <header class="section-header">
+                <h2 id="title-uma">Umamusume</h2>
+                <span class="section-line" aria-hidden="true"></span>
+                <span class="section-count"><span data-count>{{ umamusume_chars|length }}</span> personagens</span>
+            </header>
+
+            <div class="grid">
+                {% for char in umamusume_chars %}{{ char_card(char, loop.index0) }}{% endfor %}
+            </div>
+        </section>
+
+        <section class="section-block section-related" data-section="related" aria-labelledby="title-related">
+            <header class="section-header">
+                <h2 id="title-related">Relacionados</h2>
+                <span class="section-line" aria-hidden="true"></span>
+                <span class="section-count"><span data-count>{{ related_chars|length }}</span> personagens</span>
+            </header>
+
+            <div class="grid">
+                {% for char in related_chars %}{{ char_card(char, loop.index0) }}{% endfor %}
+            </div>
+        </section>
+
+        <div class="empty-state" id="emptyState" hidden>
+            <p class="empty-emoji" aria-hidden="true">🥕</p>
+            <h2>Nenhuma personagem encontrada</h2>
+            <p>Tente outro nome — dá para buscar em inglês ou japonês.</p>
+            <button type="button" class="btn-chiclete" id="clearSearch">Limpar busca</button>
         </div>
 
     </div>
-
 </div>
 
+<button type="button" class="to-top" id="toTop" aria-label="Voltar ao topo" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg>
+</button>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
-const searchInput = document.getElementById("searchInput");
-const cards = document.querySelectorAll(".card");
+(() => {
+    const searchInput = document.getElementById("searchInput");
+    const chips       = document.querySelectorAll(".chip");
+    const sections    = document.querySelectorAll(".section-block");
+    const cards       = document.querySelectorAll(".card");
+    const emptyState  = document.getElementById("emptyState");
 
-searchInput.addEventListener("keyup", function () {
-    const value = this.value.toLowerCase();
+    let filter = "all";
 
-    cards.forEach(card => {
-        const name = card.querySelector("h2").textContent.toLowerCase();
-        card.style.display = name.includes(value) ? "block" : "none";
+    /* ================= BUSCA + FILTRO ================= */
+
+    function applyFilters() {
+        const term = searchInput.value.trim().toLowerCase();
+        let totalVisible = 0;
+
+        sections.forEach(section => {
+            const sectionCards = section.querySelectorAll(".card");
+            const allowed = filter === "all" || filter === section.dataset.section;
+            let visible = 0;
+
+            sectionCards.forEach(card => {
+                const show = allowed && card.dataset.search.includes(term);
+                card.hidden = !show;
+                if (show) visible++;
+            });
+
+            section.hidden = visible === 0;
+            section.querySelector("[data-count]").textContent =
+                term ? `${visible} de ${sectionCards.length}` : sectionCards.length;
+            totalVisible += visible;
+        });
+
+        emptyState.hidden = totalVisible > 0;
+    }
+
+    searchInput.addEventListener("input", applyFilters);
+
+    chips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            filter = chip.dataset.filter;
+            chips.forEach(c => {
+                const active = c === chip;
+                c.classList.toggle("is-active", active);
+                c.setAttribute("aria-pressed", active);
+            });
+            applyFilters();
+        });
     });
 
-    // Esconde o cabeçalho da seção se todos os cards dela estiverem ocultos
-    document.querySelectorAll(".section-block").forEach(section => {
-        const visibleCards = [...section.querySelectorAll(".card")]
-            .filter(c => c.style.display !== "none");
-        section.style.display = visibleCards.length === 0 ? "none" : "";
+    document.getElementById("clearSearch").addEventListener("click", () => {
+        searchInput.value = "";
+        chips[0].click();
+        searchInput.focus();
     });
-});
+
+    /* Atalho: "/" foca a busca */
+    document.addEventListener("keydown", e => {
+        const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+        if (e.key === "/" && !typing) {
+            e.preventDefault();
+            searchInput.focus();
+        }
+        if (e.key === "Escape" && document.activeElement === searchInput && searchInput.value) {
+            searchInput.value = "";
+            applyFilters();
+        }
+    });
+
+    /* ================= PERSONAGEM ALEATÓRIA ================= */
+
+    const randomCard = document.getElementById("randomCard");
+    const randomImg  = document.getElementById("randomImg");
+
+    document.getElementById("rerollBtn").addEventListener("click", () => {
+        const pick = cards[Math.floor(Math.random() * cards.length)];
+        const img  = pick.querySelector("img");
+
+        randomCard.classList.remove("is-rolling");
+        void randomCard.offsetWidth; // reinicia a animação
+        randomCard.classList.add("is-rolling");
+
+        randomCard.href = pick.getAttribute("href");
+        randomCard.style.cssText = pick.style.cssText;
+        randomImg.src = img.currentSrc || img.src;
+        document.getElementById("randomName").textContent = pick.querySelector(".card-name").textContent;
+        document.getElementById("randomJp").textContent   = pick.querySelector(".card-jp").textContent;
+    });
+
+    /* ================= ANIVERSARIANTES ================= */
+
+    // Rola a lista (só ela, não a página) até o aniversário de hoje ou o próximo
+    const birthdayList = document.getElementById("birthdayList");
+    const birthdayNext = document.getElementById("birthdayNext");
+    if (birthdayList && birthdayNext) {
+        birthdayList.scrollTop  = birthdayNext.offsetTop  - birthdayList.offsetTop;
+        birthdayList.scrollLeft = birthdayNext.offsetLeft - birthdayList.offsetLeft;
+    }
+
+    /* ================= VOLTAR AO TOPO ================= */
+
+    const toTop = document.getElementById("toTop");
+    window.addEventListener("scroll", () => {
+        toTop.hidden = window.scrollY < 900;
+    }, { passive: true });
+    toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+})();
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,393 +1,480 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Quiz - UmaIndex</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="icon" href="{{ url_for('static', filename='img/icon.png') }}?v=2">
+{% extends "base.html" %}
 
-<style>
-@font-face{
-font-family:title1;
-src:url(/static/img/DailyVibes.otf);
-}
-</style>
-</head>
+{% block title %}Quiz — UmaIndex!{% endblock %}
+{% block description %}Você tem 60 segundos para reconhecer o máximo de Umamusumes. Quantas você acerta?{% endblock %}
+{% block logo_suffix %}Quiz!{% endblock %}
 
-<body class="quiz-page">
-
-<header class="main-header">
-<h1 class="logo"><span style="color:#ff1a8c;">Uma</span>Quiz!</h1>
-<a class="back-btn" href="/">⬅ Voltar</a>
-</header>
-
+{% block content %}
 <div class="quiz-layout">
 
-<div class="quiz-area">
+    <section class="quiz-area" aria-label="Quiz">
 
-<!-- MENU -->
+        <!-- MENU INICIAL -->
+        <div id="startMenu" class="quiz-card quiz-start">
+            <img class="quiz-mascot" src="{{ url_for('static', filename='img/icon.png') }}" alt="" width="96" height="96">
+            <h1>Vamos começar?</h1>
+            <p>Você tem <strong>60 segundos</strong> para adivinhar o máximo de Umamusumes!</p>
 
-<div id="startMenu" class="quiz-card">
+            <ul class="quiz-rules">
+                <li><span aria-hidden="true">⏱️</span> 60 segundos de corrida</li>
+                <li><span aria-hidden="true">🎯</span> +10 pontos por acerto</li>
+                <li><span aria-hidden="true">🔥</span> +3 de bônus a partir de 3 acertos seguidos</li>
+            </ul>
 
-<h2>UmaQuiz</h2>
+            <button type="button" id="startBtn" class="btn-chiclete btn-big">▶ Play</button>
+            <p class="quiz-error" id="startError" role="alert" hidden>
+                Não foi possível carregar a pergunta. Verifique sua conexão e tente de novo.
+            </p>
+        </div>
 
-<p>
-Você tem 60 segundos para adivinhar
-o máximo de UmaMusumes!
-</p>
+        <!-- QUIZ -->
+        <div id="quizGame" class="quiz-card quiz-game" hidden>
 
-<button onclick="startGame()" class="start-btn">
-▶ Começar Jogo
-</button>
+            <div class="quiz-hud">
+                <div class="hud-item hud-score">
+                    <small>Pontuação</small>
+                    <b id="score">0</b>
+                </div>
+                <div class="hud-item hud-streak" id="streakBox" aria-live="polite">
+                    <span aria-hidden="true">🔥</span> <b id="streak">0</b>
+                </div>
+                <div class="hud-item hud-time">
+                    <small>Tempo</small>
+                    <b id="time">60</b>
+                </div>
+            </div>
+            <div class="timebar" aria-hidden="true"><span id="timebarFill"></span></div>
 
-</div>
+            <div class="quiz-image" id="quizFrame">
+                <img id="quizImage" alt="Personagem misteriosa" width="296" height="389">
+            </div>
 
+            <h2 class="quiz-question">Quem é essa personagem?</h2>
 
-<!-- QUIZ -->
+            <div class="quiz-options" id="optionsContainer"></div>
 
-<div id="quizGame" class="quiz-card" style="display:none;">
+            <p id="result" class="quiz-result" aria-live="polite"></p>
+        </div>
 
-<div class="quiz-image">
-<img src="{{ correct['thumb_img'] }}" id="quizImage">
-</div>
+    </section>
 
-<h2 class="quiz-question">
-Quem é essa personagem?
-</h2>
-
-<div class="quiz-options" id="optionsContainer">
-
-{% for option in options %}
-
-<button
-class="quiz-btn"
-onclick="checkAnswer('{{ option['id'] }}','{{ correct['id'] }}')">
-
-{{ option['name_en'] }}
-
-</button>
-
-{% endfor %}
-
-</div>
-
-<h3 id="result"></h3>
-
-</div>
-
-</div>
-
-
-<!-- SIDEBAR -->
-
-<div class="quiz-sidebar">
-
-<h3>🏆 Ranking</h3>
-
-<ol id="rankingList"></ol>
-
-<button onclick="resetRanking()" class="reset-ranking">
-Limpar Ranking
-</button>
+    <!-- SIDEBAR -->
+    <aside class="quiz-sidebar" aria-labelledby="rankingTitle">
+        <h2 id="rankingTitle">🏆 Ranking</h2>
+        <ol id="rankingList" class="ranking-list"></ol>
+        <button type="button" id="resetRanking" class="reset-ranking">Limpar Ranking</button>
+    </aside>
 
 </div>
 
-</div>
+<!-- FIM DE JOGO -->
+<dialog id="gameOverDialog" class="result-dialog" aria-labelledby="gameOverTitle">
+    <form id="saveForm" method="dialog">
+        <p class="dialog-eyebrow">Tempo esgotado!</p>
+        <h2 id="gameOverTitle">Fim de corrida!</h2>
 
+        <p class="final-score"><b id="finalScore">0</b> pontos</p>
 
+        <ul class="final-stats">
+            <li><b id="statHits">0</b><small>acertos</small></li>
+            <li><b id="statMisses">0</b><small>erros</small></li>
+            <li><b id="statBest">0</b><small>melhor sequência</small></li>
+        </ul>
+
+        <p class="rank-msg" id="rankMsg" hidden></p>
+
+        <div class="name-field" id="nameField">
+            <label for="playerName">Seu nome para o ranking</label>
+            <input type="text" id="playerName" maxlength="20" autocomplete="nickname"
+                   placeholder="Ex.: Treinadora" required>
+        </div>
+
+        <div class="dialog-actions">
+            <button type="submit" class="btn-chiclete" id="saveBtn">Salvar no ranking</button>
+            <button type="button" class="btn-ghost" id="skipBtn">Jogar de novo</button>
+        </div>
+    </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
 <script>
-
-/* ================= VARIAVEIS ================= */
-
-let score = parseInt(localStorage.getItem("quizScore")) || 0
-let streak = parseInt(localStorage.getItem("quizStreak")) || 0
-let timeLeft = parseInt(localStorage.getItem("quizTime")) || 60
-let answered = false
-
-let gameStarted = localStorage.getItem("quizStarted") === "true"
-
-let currentCorrect = "{{ correct['id'] }}"
-
-let usedCharacters = []
-
-let timer
-
-/* ================= SCORE / TIMER ================= */
-
-const scoreDisplay = document.createElement("div")
-const timerDisplay = document.createElement("div")
-
-scoreDisplay.id="score"
-timerDisplay.id="timer"
-
-document.getElementById("quizGame").prepend(timerDisplay)
-document.getElementById("quizGame").prepend(scoreDisplay)
-
-/* ================= INIT ================= */
-
-updateUI()
-loadRanking()
-
-if(gameStarted){
-
-document.getElementById("startMenu").style.display="none"
-document.getElementById("quizGame").style.display="flex"
-
-startTimer()
-
-}
-
-/* ================= START ================= */
-
-function startGame(){
-
-score = 0
-streak = 0
-timeLeft = 60
-answered = false
-usedCharacters = []
-
-updateUI()
-
-localStorage.setItem("quizStarted","true")
-
-document.getElementById("startMenu").style.display="none"
-document.getElementById("quizGame").style.display="flex"
-
-enableButtons()  
-
-startTimer()
-}
-
-/* ================= TIMER ================= */
-
-function startTimer(){
-
-timer=setInterval(()=>{
-
-timeLeft--
-
-localStorage.setItem("quizTime",timeLeft)
-
-updateUI()
-
-if(timeLeft<=0){
-
-clearInterval(timer)
-gameOver()
-
-}
-
-},1000)
-
-}
-
-/* ================= GAME OVER ================= */
-
-function gameOver(){
-
-clearInterval(timer)
-
-disableButtons()
-
-let playerName = prompt("Tempo acabou! Pontuação: " + score + "\nDigite seu nome:")
-
-if(playerName){
-    saveScore(playerName, score)
-}
-
-/* Resetar variáveis em memória */
-score = 0
-streak = 0
-timeLeft = 60
-answered = false
-usedCharacters = []
-
-/* Atualizar UI */
-updateUI()
-
-/* Voltar para menu */
-document.getElementById("quizGame").style.display = "none"
-document.getElementById("startMenu").style.display = "flex"
-
-document.getElementById("result").innerHTML = ""
-
-/* Limpar localStorage */
-resetGame()
-}
-
-/* ================= UI ================= */
-
-function updateUI(){
-
-scoreDisplay.innerHTML="Pontuação: "+score
-timerDisplay.innerHTML="Tempo: "+timeLeft
-
-}
-
-/* ================= QUIZ ================= */
-
-function checkAnswer(selected,correct){
-
-if(answered) return
-answered=true
-
-const result=document.getElementById("result")
-const buttons=document.querySelectorAll(".quiz-btn")
-
-buttons.forEach(btn=>btn.disabled=true)
-
-if(selected===correct){
-
-streak++
-
-let points=10
-
-if(streak>=3){
-points+=3
-}
-
-score+=points
-
-result.innerHTML="🎉 Acertou! +"+points
-result.style.color="#6dff7a"
-
-}else{
-
-streak=0
-
-result.innerHTML="❌ Errou!"
-result.style.color="#ff4d4d"
-
-}
-
-localStorage.setItem("quizScore",score)
-localStorage.setItem("quizStreak",streak)
-
-updateUI()
-
-setTimeout(loadNextQuestion,800)
-
-}
-
-/* ================= PROXIMA PERGUNTA ================= */
-
-async function loadNextQuestion(){
-
-answered=false
-
-const params = new URLSearchParams()
-
-usedCharacters.forEach(id => {
-    params.append("used[]", id)
-})
-
-const response = await fetch("/quiz/next?" + params.toString())
-const data = await response.json()
-
-currentCorrect = data.correct_id
-
-// adicionar à lista de usados
-usedCharacters.push(currentCorrect)
-
-/* trocar imagem */
-document.getElementById("quizImage").src=data.image
-
-/* preload */
-const img=new Image()
-img.src=data.image
-
-/* atualizar opções */
-const container=document.getElementById("optionsContainer")
-container.innerHTML=""
-
-data.options.forEach(opt=>{
-    const btn=document.createElement("button")
-    btn.className="quiz-btn"
-    btn.innerText=opt.name
-    btn.onclick=()=>checkAnswer(opt.id,currentCorrect)
-    container.appendChild(btn)
-})
-
-document.getElementById("result").innerHTML=""
-}
-
-/* ================= BUTTON CONTROL ================= */
-
-function disableButtons(){
-
-const buttons=document.querySelectorAll(".quiz-btn")
-buttons.forEach(btn=>btn.disabled=true)
-
-}
-
-function enableButtons(){
-    const buttons = document.querySelectorAll(".quiz-btn")
-    buttons.forEach(btn => btn.disabled = false)
-}
-
-/* ================= RANKING ================= */
-
-function loadRanking(){
-
-let ranking=JSON.parse(localStorage.getItem("quizRanking"))||[]
-
-const list=document.getElementById("rankingList")
-
-list.innerHTML=""
-
-ranking.forEach(player=>{
-
-const li=document.createElement("li")
-
-li.innerHTML=`${player.name} — ${player.score}`
-
-list.appendChild(li)
-
-})
-
-}
-
-function saveScore(name,score){
-
-let ranking=JSON.parse(localStorage.getItem("quizRanking"))||[]
-
-ranking.push({
-name:name,
-score:score
-})
-
-ranking.sort((a,b)=>b.score-a.score)
-
-ranking=ranking.slice(0,5)
-
-localStorage.setItem("quizRanking",JSON.stringify(ranking))
-
-loadRanking()
-
-}
-
-function resetRanking(){
-
-localStorage.removeItem("quizRanking")
-
-loadRanking()
-
-}
-
-/* ================= RESET ================= */
-
-function resetGame(){
-
-localStorage.removeItem("quizScore")
-localStorage.removeItem("quizStreak")
-localStorage.removeItem("quizTime")
-localStorage.removeItem("quizStarted")
-
-usedCharacters = []
-
-}
-
+(() => {
+    const GAME_TIME = 60;          // segundos
+    const RANK_KEY  = "quizRanking";
+    const NAME_KEY  = "quizLastName";
+
+    const $ = id => document.getElementById(id);
+
+    const startMenu = $("startMenu");
+    const quizGame  = $("quizGame");
+    const options   = $("optionsContainer");
+    const result    = $("result");
+    const frame     = $("quizFrame");
+    const image     = $("quizImage");
+    const dialog    = $("gameOverDialog");
+
+    /* ================= STORAGE SEGURO ================= */
+
+    const store = {
+        get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+        set(key, value) { try { localStorage.setItem(key, value); } catch {} },
+        remove(key) { try { localStorage.removeItem(key); } catch {} },
+    };
+
+    // Limpa chaves de versões antigas, que guardavam o jogo em andamento
+    ["quizScore", "quizStreak", "quizTime", "quizStarted"].forEach(store.remove);
+
+    /* ================= ESTADO ================= */
+
+    const state = {
+        running: false,
+        answered: true,
+        score: 0,
+        streak: 0,
+        best: 0,
+        hits: 0,
+        misses: 0,
+        used: [],
+        current: null,
+        endAt: 0,
+        timer: null,
+    };
+
+    /* ================= PERGUNTAS (com pré-carregamento) ================= */
+
+    function preloadImage(src) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = img.onerror = () => resolve();
+            img.src = src;
+        });
+    }
+
+    async function fetchQuestion() {
+        const params = new URLSearchParams();
+        state.used.forEach(id => params.append("used[]", id));
+
+        const response = await fetch("/quiz/next?" + params.toString());
+        if (!response.ok) throw new Error("HTTP " + response.status);
+
+        const question = await response.json();
+        await preloadImage(question.image);
+        return question;
+    }
+
+    let nextQuestion = null;
+
+    function prefetch() {
+        nextQuestion = fetchQuestion();
+        nextQuestion.catch(() => {}); // o erro é tratado quando a pergunta for usada
+    }
+
+    async function takeQuestion() {
+        try {
+            return await nextQuestion;
+        } catch {
+            prefetch(); // uma nova tentativa
+            return await nextQuestion;
+        }
+    }
+
+    function renderQuestion(q) {
+        state.current = q;
+        state.used.push(q.correct_id);
+
+        frame.classList.remove("is-revealed");
+        frame.style.removeProperty("--c");
+        image.src = q.image;
+
+        options.replaceChildren(...q.options.map(opt => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "quiz-btn";
+            btn.textContent = opt.name;
+            btn.dataset.id = opt.id;
+            return btn;
+        }));
+
+        result.textContent = "";
+        result.className = "quiz-result";
+        state.answered = false;
+
+        prefetch();
+    }
+
+    async function showNext() {
+        let q;
+        try {
+            q = await takeQuestion();
+        } catch {
+            if (state.running) failGame();
+            return false;
+        }
+        if (state.running) {
+            renderQuestion(q);
+        } else {
+            prefetch(); // o tempo acabou durante o carregamento: descarta essa pergunta
+        }
+        return true;
+    }
+
+    /* ================= RESPOSTA ================= */
+
+    options.addEventListener("click", e => {
+        const btn = e.target.closest(".quiz-btn");
+        if (!btn || state.answered || !state.running) return;
+        checkAnswer(btn);
+    });
+
+    function checkAnswer(chosen) {
+        state.answered = true;
+
+        const correctId = state.current.correct_id;
+        const isCorrect = Number(chosen.dataset.id) === correctId;
+        let correctName = "";
+
+        options.querySelectorAll(".quiz-btn").forEach(btn => {
+            btn.disabled = true;
+            if (Number(btn.dataset.id) === correctId) {
+                btn.classList.add("is-correct");
+                correctName = btn.textContent;
+            }
+        });
+
+        if (isCorrect) {
+            state.streak++;
+            state.hits++;
+            state.best = Math.max(state.best, state.streak);
+
+            // Bônus de streak ativado a partir do 3º acerto consecutivo
+            const points = state.streak >= 3 ? 13 : 10;
+            state.score += points;
+
+            result.textContent = state.streak >= 3
+                ? `🔥 Acertou! +${points} (sequência x${state.streak})`
+                : `🎉 Acertou! +${points}`;
+            result.classList.add("is-correct");
+        } else {
+            state.streak = 0;
+            state.misses++;
+            chosen.classList.add("is-wrong");
+            result.textContent = `❌ Errou! Era ${correctName}`;
+            result.classList.add("is-wrong");
+        }
+
+        frame.style.setProperty("--c", state.current.color);
+        frame.classList.add("is-revealed");
+        updateHud();
+
+        setTimeout(() => {
+            if (state.running) showNext();
+        }, isCorrect ? 700 : 1100);
+    }
+
+    /* ================= HUD / TIMER ================= */
+
+    function updateHud() {
+        $("score").textContent = state.score;
+        $("streak").textContent = state.streak;
+        $("streakBox").classList.toggle("is-hot", state.streak >= 3);
+    }
+
+    function tick() {
+        const left = Math.max(0, state.endAt - performance.now());
+        const secs = Math.ceil(left / 1000);
+
+        $("time").textContent = secs;
+        $("timebarFill").style.transform = `scaleX(${left / (GAME_TIME * 1000)})`;
+        quizGame.classList.toggle("is-warning", secs <= 20 && secs > 10);
+        quizGame.classList.toggle("is-danger", secs <= 10);
+
+        if (left <= 0) gameOver();
+    }
+
+    /* ================= START ================= */
+
+    async function startGame() {
+        if (state.running) return;
+
+        Object.assign(state, {
+            running: true, answered: true,
+            score: 0, streak: 0, best: 0, hits: 0, misses: 0, used: [],
+        });
+
+        $("startBtn").disabled = true;
+        $("startError").hidden = true;
+        updateHud();
+
+        const ok = await showNext();
+        $("startBtn").disabled = false;
+        if (!ok) return;
+
+        startMenu.hidden = true;
+        quizGame.hidden = false;
+
+        // O cronômetro só começa quando a primeira pergunta aparece
+        state.endAt = performance.now() + GAME_TIME * 1000;
+        tick();
+        state.timer = setInterval(tick, 100);
+    }
+
+    function failGame() {
+        state.running = false;
+        clearInterval(state.timer);
+        quizGame.hidden = true;
+        startMenu.hidden = false;
+        $("startError").hidden = false;
+    }
+
+    /* ================= GAME OVER ================= */
+
+    function gameOver() {
+        if (!state.running) return;
+
+        state.running = false;
+        clearInterval(state.timer);
+        options.querySelectorAll(".quiz-btn").forEach(btn => btn.disabled = true);
+
+        $("finalScore").textContent = state.score;
+        $("statHits").textContent   = state.hits;
+        $("statMisses").textContent = state.misses;
+        $("statBest").textContent   = state.best;
+
+        const ranking  = readRanking();
+        const record   = ranking.length === 0 || state.score > ranking[0].score;
+        const entersTop = ranking.length < 5 || state.score > ranking[ranking.length - 1].score;
+        const canSave  = state.score > 0;
+
+        const rankMsg = $("rankMsg");
+        rankMsg.hidden = !canSave || !entersTop;
+        rankMsg.textContent = record ? "🏆 Novo recorde!" : "✨ Você entrou no Top 5!";
+
+        $("nameField").hidden = !canSave;
+        $("playerName").required = canSave;
+        $("playerName").value = store.get(NAME_KEY) || "";
+        $("saveBtn").hidden = !canSave;
+        $("skipBtn").textContent = canSave ? "Jogar sem salvar" : "Jogar de novo";
+
+        dialog.showModal();
+        (canSave ? $("playerName") : $("skipBtn")).focus();
+    }
+
+    function backToMenu() {
+        quizGame.hidden = true;
+        quizGame.classList.remove("is-warning", "is-danger");
+        startMenu.hidden = false;
+        $("startBtn").focus();
+    }
+
+    $("saveForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const name = $("playerName").value.trim();
+        if (!name) {
+            $("playerName").focus();
+            return;
+        }
+        store.set(NAME_KEY, name);
+        saveScore(name, state.score);
+        dialog.close();
+    });
+
+    $("skipBtn").addEventListener("click", () => {
+        dialog.close();
+        startGame();
+    });
+
+    dialog.addEventListener("close", () => {
+        if (!state.running) backToMenu();
+    });
+
+    /* ================= RANKING ================= */
+
+    function readRanking() {
+        try {
+            const data = JSON.parse(store.get(RANK_KEY));
+            return Array.isArray(data)
+                ? data.filter(p => p && typeof p.name === "string" && Number.isFinite(p.score))
+                : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function renderRanking(highlight = -1) {
+        const list = $("rankingList");
+        const ranking = readRanking();
+        const medals = ["🥇", "🥈", "🥉"];
+
+        list.replaceChildren();
+        $("resetRanking").hidden = ranking.length === 0;
+
+        if (ranking.length === 0) {
+            const li = document.createElement("li");
+            li.className = "ranking-empty";
+            li.textContent = "Ninguém no pódio ainda. Que tal ser a primeira?";
+            list.appendChild(li);
+            return;
+        }
+
+        ranking.forEach((player, i) => {
+            const li = document.createElement("li");
+            if (i === highlight) li.className = "is-new";
+
+            const pos = document.createElement("span");
+            pos.className = "rank-pos";
+            pos.textContent = medals[i] || i + 1;
+
+            const name = document.createElement("span");
+            name.className = "rank-name";
+            name.textContent = player.name; // textContent: nada de HTML vindo do usuário
+
+            const score = document.createElement("b");
+            score.className = "rank-score";
+            score.textContent = player.score;
+
+            li.append(pos, name, score);
+            list.appendChild(li);
+        });
+    }
+
+    function saveScore(name, score) {
+        const entry = { name: name.slice(0, 20), score };
+        const ranking = readRanking();
+
+        ranking.push(entry);
+        ranking.sort((a, b) => b.score - a.score);
+        const top = ranking.slice(0, 5);
+
+        store.set(RANK_KEY, JSON.stringify(top));
+        renderRanking(top.indexOf(entry));
+    }
+
+    // Limpar pede confirmação com um segundo clique
+    const resetBtn = $("resetRanking");
+    let resetTimeout;
+    resetBtn.addEventListener("click", () => {
+        if (!resetBtn.classList.contains("is-confirming")) {
+            resetBtn.classList.add("is-confirming");
+            resetBtn.textContent = "Clique de novo para confirmar";
+            resetTimeout = setTimeout(() => {
+                resetBtn.classList.remove("is-confirming");
+                resetBtn.textContent = "Limpar Ranking";
+            }, 3000);
+            return;
+        }
+        clearTimeout(resetTimeout);
+        resetBtn.classList.remove("is-confirming");
+        resetBtn.textContent = "Limpar Ranking";
+        store.remove(RANK_KEY);
+        renderRanking();
+    });
+
+    /* ================= INIT ================= */
+
+    $("startBtn").addEventListener("click", startGame);
+    renderRanking();
+    prefetch(); // a primeira pergunta já fica pronta enquanto a pessoa lê as regras
+})();
 </script>
-
-</body>
-</html>
+{% endblock %}
